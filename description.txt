@@ -1,0 +1,1 @@
+Includes items to automatically build simple structures from the furniture, blocks, and walls in your inventory.
