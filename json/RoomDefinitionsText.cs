@@ -1,0 +1,75 @@
+﻿namespace AutoBuilder.json
+{
+    /**
+     * Sole purpose is to hold text because I just couldn't seem to manage to read in json from an embedded resource. Unsure if issue was due to tmodloader or just doing it wrong.
+     */
+    class RoomDefinitionsText
+    {
+
+        public static string text =
+@"[
+	{
+		'Name' :  'Random',
+        'RequiredTags' :  [],
+        'RequiredTagsCount' : 0,
+        'AllowedTags' :  [],
+        'Width' : 20,
+        'Height' : 10
+    },
+    {
+    'Name' :  'Bathroom',
+    'RequiredTags' :  ['Bathroom'],
+    'RequiredTagsCount' :  2,
+    'AllowedTags' :  ['Bathroom', 'Pretty'],
+    'Width' : 20,
+    'Height' : 10
+},
+{
+    'Name' :  'Bedroom',
+    'RequiredTags' :  ['Bed','Dresser'],
+    'RequiredTagsCount' :  2,
+    'AllowedTags' :  ['Bedroom', 'Container', 'Art', 'Seat'],
+    'DisallowedTags' :  ['Bathroom'],
+    'Width' : 20,
+    'Height' : 10
+},
+{
+    'Name' :  'Library',
+    'RequiredTags' :  ['Bookcase'],
+    'RequiredTagsCount' :  1,
+    'AllowedTags' :  ['Library', 'Art'],
+    'DisallowedTags' :  ['FireHazard'],
+    'Width' : 30,
+    'Height' : 10
+},
+{
+    'Name' :  'Display Room',
+    'RequiredTags' : ['Art', 'Trophy'],
+    'RequiredTagsCount' : 2,
+    'AllowedTags' :  ['Art','Trophy'],
+    'DisallowedTags' :  ['Bathroom','Bedroom'],
+    'Width' : 30,
+    'Height' : 20
+},
+{
+    'Name' :  'Nature Preserve',
+    'RequiredTags' :  ['Nature'],
+    'RequiredTagsCount' :  1,
+    'AllowedTags' :  ['Nature', 'Pretty'],
+    'DisallowedTags' :  ['Bathroom','Bedroom'],
+    'Width' : 60,
+    'Height' : 10
+},
+{
+    'Name' :  'Armory',
+    'RequiredTags' :  ['Military'],
+    'RequiredTagsCount' :  1,
+    'AllowedTags' :  ['Military', 'Trophy'],
+    'DisallowedTags' :  ['Bathroom','Bedroom'],
+    'Width' : 30,
+    'Height' : 20
+}
+]";
+
+    }
+}

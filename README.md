@@ -22,5 +22,10 @@ Usage:
 --How many themed rooms are implemented is basically subject to my time (not alot) and artistic sense (abyssmal). So, I would encourage any modder who wants to take this idea up to 11 to fork this project and make something amazing.
 -One room at a time not enough to fill your insatiable desire for fancy housing? Enter the mansionator. This will build a large frame in one of a few configurations and then fill it with rooms, as above.
 
+
+-Developer Notes:
+--Alot can be done just by modifying the json files. This was very much designed as a data-centric application.
+--CSLD = Comfort/Surface/Light/Door. The requirements of an NPC housing. See https://terraria.gamepedia.com/House
+
 Credits
 -This mod would not exist without the instahouse from Fargo's Mutant Mod. I looked at that and asked "how far can I take this?" I also took a look at his code for an initial idea of how to accomplish some of this.

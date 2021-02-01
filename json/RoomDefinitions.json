@@ -1,0 +1,47 @@
+﻿[
+	{
+		"Name" :  "Random",
+		"RequiredTags" :  [],
+		"RequiredTagsCount" :  [],
+		"AllowedTags" :  []
+	},
+	{
+		"Name" :  "Bathroom",
+		"RequiredTags" :  ["Bathroom"],
+		"RequiredItemsCount" :  3,
+		"AllowedTags" :  ["Bathroom", "Pretty"]
+	},
+	{
+		"Name" :  "Bedroom",
+		"RequiredTags" :  ["Bed","Dresser"],
+		"RequiredItemsCount" :  2,
+		"AllowedTags" :  ["Bedroom", "Container", "Art", "Seat"],
+		"DisallowedTags" :  ["Bathroom"]
+	},
+	{
+		"Name" :  "Library",
+		"RequiredTags" :  ["Bookcase"],
+		"RequiredItemsCount" :  1,
+		"AllowedTags" :  ["Library", "Art", "Seat", "Table"],
+		"DisallowedTags" :  ["FireHazard"]
+	},
+	{
+		"Name" :  "Display Room",
+		"AllowedTags" :  ["Art","Trophy"],
+		"DisallowedTags" :  ["Bathroom","Bedroom"]
+	},
+	{
+		"Name" :  "Nature Preserve",
+		"RequiredTags" :  ["Nature"],
+		"RequiredItemsCount" :  1,
+		"AllowedTags" :  ["Nature", "Pretty"],
+		"DisallowedTags" :  ["Bathroom","Bedroom"]
+	},
+	{
+		"Name" :  "Armory",
+		"RequiredTags" :  ["Military"],
+		"RequiredItemsCount" :  1,
+		"AllowedTags" :  ["Military", "Trophy"],
+		"DisallowedTags" :  ["Bathroom","Bedroom"]
+	}
+]
