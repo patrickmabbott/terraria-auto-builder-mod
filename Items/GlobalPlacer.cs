@@ -12,15 +12,42 @@ namespace AutoBuilder.Items
 {
     public class GlobalPlacer
     {
+        /**
+         * Bit of a kludge. But, makes for less that needs to be passed between functions
+         */
+        private static Player player = null;
+
+        private static void ConsumeItem(Item item, int amountToConsume = 1)
+        {
+            if (ModContent.GetInstance<AutoBuilderConfig>().DoConsumeResources)
+            {
+                item.stack -= Math.Min(amountToConsume, item.stack);
+            }
+        }
+
+        private static void ConsumeItem(string itemName, int amountToConsume = 1)
+        {
+            Item item = player.inventory.FirstOrDefault(entry => entry.Name == itemName);
+            if (item != null)
+            {
+                ConsumeItem(item, amountToConsume);
+            }
+            else
+            {
+                Constants.Logger.Warn($"Attempted to consume item {itemName} but couldn't find it");
+            }
+        }
+
         public static void PlaceFurniturePiece(Vector2 position, Placeable placeable)
         {
             Constants.Logger.Info($"Placing furniture {placeable.Name} {placeable.TileId} {placeable.Style} at (" + position.X + "," + position.Y + ")");
             WorldGen.PlaceTile((int)position.X, (int)position.Y, placeable.TileId, style: placeable.Style);
+            ConsumeItem(placeable.Name);
         }
 
         public static void PlaceWall(Vector2 position, int tileId)
         {
-            Constants.Logger.Info($"Placing wall {tileId} at ({position.X},{position.Y})");
+            //Constants.Logger.Info($"Placing wall {tileId} at ({position.X},{position.Y})");
             WorldGen.PlaceWall((int)position.X, (int)position.Y, tileId);
             //This would probably work. But, I don't have a way of testing it so making this singleplayer-only for now.
             //if (Main.netMode == NetmodeID.Server)
@@ -29,7 +56,7 @@ namespace AutoBuilder.Items
 
         public static void PlaceBlock(Vector2 position, int tileId)
         {
-            Constants.Logger.Info($"Placing {tileId} block at ({position.X},{position.Y}");
+            //Constants.Logger.Info($"Placing {tileId} block at ({position.X},{position.Y}");
             WorldGen.PlaceTile((int)position.X, (int)position.Y, tileId);
         }
 
@@ -158,25 +185,34 @@ namespace AutoBuilder.Items
             int startingX = (int)roomSize.X / 2;
 
             int unoccupiedXPosition = -1;
-            for (int x = startingX; x < roomSize.X - 1 - placeable.CatalogEntry.Width; x++)
-            {
-                if (IsSpaceClear(x, 6, placeable.CatalogEntry.Width, placeable.CatalogEntry.Height, isOccupied))
-                {
-                    unoccupiedXPosition = x;
-                }
-            }
+            int unoccupiedYPosition = -1;
 
-            if (unoccupiedXPosition == -1)
+            for (int y = 6; y <= roomSize.Y - 6; y+= 4)
             {
-                //Otherwise, go the other way.
-                for (int x = startingX; x > 1 + placeable.CatalogEntry.Width / 2; x--)
+                for (int x = startingX; x < roomSize.X - 1 - placeable.CatalogEntry.Width; x++)
                 {
-                    if (IsSpaceClear(x, 6, placeable.CatalogEntry.Width, placeable.CatalogEntry.Height, isOccupied))
+                    if (IsSpaceClear(x, y, placeable.CatalogEntry.Width, placeable.CatalogEntry.Height, isOccupied))
                     {
                         unoccupiedXPosition = x;
+                        unoccupiedYPosition = y;
                     }
                 }
+
+                if (unoccupiedXPosition == -1)
+                {
+                    //Otherwise, go the other way.
+                    for (int x = startingX; x > 1 + placeable.CatalogEntry.Width / 2; x--)
+                    {
+                        if (IsSpaceClear(x, y, placeable.CatalogEntry.Width, placeable.CatalogEntry.Height, isOccupied))
+                        {
+                            unoccupiedXPosition = x;
+                            unoccupiedYPosition = y;
+                        }
+                    }
+                }
+
             }
+
 
             if (unoccupiedXPosition == -1)
             {
@@ -188,38 +224,44 @@ namespace AutoBuilder.Items
             {
                 Vector2 lowerLeftCorner = new Vector2(Main.mouseX, Main.mouseY) + Main.screenPosition;
                 lowerLeftCorner /= 16f;
-                PlaceFurniturePiece(lowerLeftCorner + new Vector2(unoccupiedXPosition, -5), placeable);
-                SetOccupied(unoccupiedXPosition, 6,
+                PlaceFurniturePiece(lowerLeftCorner + new Vector2(unoccupiedXPosition, -unoccupiedYPosition), placeable);
+                SetOccupied(unoccupiedXPosition, unoccupiedYPosition,
                     placeable.CatalogEntry.Width + 1, placeable.CatalogEntry.Height, isOccupied);
                 return true;
             }
         }
 
-        public static void PlaceRoom(Player player, Vector2 size, string preferredRoom = null, string preferredTheme = null)
+        public static void PlaceRoom(Player player, Vector2 size, bool useFurnitureSets = true, 
+            string preferredRoom = null, string preferredTheme = null)
         {
+            GlobalPlacer.player = player;
             PlaceableOrganizer organizer = new PlaceableOrganizer();
-            organizer.DetermineAvailableThemedSets(player);
+            Constants.Logger.Info($"Trying to place set with furniture? {useFurnitureSets}");
+            bool validSetFound = organizer.DetermineAvailableThemedSets(player, useFurnitureSets);
+            if (!validSetFound)
+            {
+                Constants.Logger.Info("No full, NPC-housable set of blocks/walls/furniture found");
+                return;
+            }
             Constants.Logger.Info("Found themed sets");
-            Tuple<ThemedPlaceableSet, RoomSpecification> results = organizer.FindPlaceableSet(preferredRoom != null ?new List<string>() { preferredRoom } : null, size);
+            Tuple<ThemedPlaceableSet, RoomSpecification> results = 
+                organizer.FindPlaceableSet(preferredRoom != null ?new List<string>() { preferredRoom } : null, size, useFurnitureSets : useFurnitureSets);
+
+            if (results?.Item1 == null || results.Item2 == null)
+            {
+                Constants.Logger.Warn("Couldn't find any room buildable from current furniture");
+                //Couldn't find a valid room, unfortunately.
+                return;
+            }
+
             ThemedPlaceableSet foundSet = results.Item1;
             RoomSpecification foundRoom = results.Item2;
-            if (size.X < 1 || size.Y < 1)
-            {
-                size = new Vector2(foundRoom.Width, foundRoom.Height);
-            }
 
             Constants.Logger.Info("Found themed set");
 
-            if (size.X <= 0 || size.Y <= 0)
+            if (size.X < 1 || size.Y < 1)
             {
-
-            }
-
-            if (foundSet == null)
-            {
-                Constants.Logger.Warn("Couldn't find set that fit any room designs");
-                //Couldn't find a valid room, unfortunately.
-                return;
+                size = new Vector2(foundRoom.Width, foundRoom.Height);
             }
 
             Vector2 lowerLeftCorner = new Vector2(Main.mouseX, Main.mouseY) + Main.screenPosition;
@@ -240,13 +282,18 @@ namespace AutoBuilder.Items
                 }
             }
 
+            Placeable block = foundSet.Blocks.First();
+            Placeable wall = foundSet.Walls.First();
+
             //floor
             Constants.Logger.Info("Setting up floor");
             for (int xRelative = 0; xRelative <= size.X; xRelative++)
             {
                 occupied[xRelative, 0] = true;
-                PlaceBlock(lowerLeftCorner + new Vector2(xRelative, 0), foundSet.Blocks.First().TileId);
+                PlaceBlock(lowerLeftCorner + new Vector2(xRelative, 0), block.TileId);
             }
+            //2 because top and bottom, left and rt. -5 for two 3-high doors and the sidewalls each share 2 blocks already counted in floor/ceiling.
+            ConsumeItem(block.Name, (int)((size.X + size.Y - 5) * 2) );
 
             //Left side
             //Starts at 3 to leave room for a 3-high door
@@ -298,6 +345,8 @@ namespace AutoBuilder.Items
                     PlaceWall(lowerLeftCorner + new Vector2(xRelative, -yRelative), foundSet.Walls.First().TileId);
                 }
             }
+
+            ConsumeItem(block.Name, (int)((size.X + size.Y - 5) * 2));
 
             //Want to make sure that required light/surface/comfort get first crack at placement. Even if the room doesn't have space for everything,
             //want to make sure it is at least a valid room.

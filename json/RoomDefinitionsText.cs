@@ -14,7 +14,7 @@
         'RequiredTagsCount' : 0,
         'AllowedTags' :  [],
         'Width' : 20,
-        'Height' : 10
+        'Height' : 12
     },
     {
     'Name' :  'Bathroom',
@@ -22,7 +22,7 @@
     'RequiredTagsCount' :  2,
     'AllowedTags' :  ['Bathroom', 'Pretty'],
     'Width' : 20,
-    'Height' : 10
+    'Height' : 24
 },
 {
     'Name' :  'Bedroom',
@@ -31,7 +31,7 @@
     'AllowedTags' :  ['Bedroom', 'Container', 'Art', 'Seat'],
     'DisallowedTags' :  ['Bathroom'],
     'Width' : 20,
-    'Height' : 10
+    'Height' : 24
 },
 {
     'Name' :  'Library',
@@ -40,7 +40,7 @@
     'AllowedTags' :  ['Library', 'Art'],
     'DisallowedTags' :  ['FireHazard'],
     'Width' : 30,
-    'Height' : 10
+    'Height' : 24
 },
 {
     'Name' :  'Display Room',
@@ -49,7 +49,7 @@
     'AllowedTags' :  ['Art','Trophy'],
     'DisallowedTags' :  ['Bathroom','Bedroom'],
     'Width' : 30,
-    'Height' : 20
+    'Height' : 24
 },
 {
     'Name' :  'Nature Preserve',
@@ -58,7 +58,7 @@
     'AllowedTags' :  ['Nature', 'Pretty'],
     'DisallowedTags' :  ['Bathroom','Bedroom'],
     'Width' : 60,
-    'Height' : 10
+    'Height' : 12
 },
 {
     'Name' :  'Armory',
@@ -67,7 +67,7 @@
     'AllowedTags' :  ['Military', 'Trophy'],
     'DisallowedTags' :  ['Bathroom','Bedroom'],
     'Width' : 30,
-    'Height' : 20
+    'Height' : 24
 }
 ]";
 

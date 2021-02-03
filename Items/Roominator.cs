@@ -11,51 +11,86 @@ namespace AutoBuilder.Items
     public class Roominator : ModItem
     {
 
+        //private PlaceableOrganizer organizer = new PlaceableOrganizer();
+        //private PlaceableOrganizer organizer = new PlaceableOrganizer();
         double lastPlacementTime = 0;
+
+        private string currentRoom;
 
         public override void SetStaticDefaults()
         {
-            Constants.Logger = mod.Logger;
-            mod.Logger.Info("Testing info logger");
-            mod.Logger.Error("Testing logger");
-            Constants.Init();
-            mod.Logger.Error("Post init");
             DisplayName.SetDefault("Roominator");
-            Tooltip.SetDefault("Places an house room from items in your inventory");
+            Tooltip.SetDefault("Places a house room from items in your inventory");
         }
 
         public override void SetDefaults()
         {
-            item.damage = 50; // The damage your item deals
-            item.melee = true; // Whether your item is part of the melee class
-            item.width = 40; // The item texture's width
-            item.height = 40; // The item texture's height
-            item.useTime = 20; // The time span of using the weapon. Remember in terraria, 60 frames is a second.
-            item.useAnimation = 20;
-            item.reuseDelay = 1000;
-            item.useAnimation = 20; // The time span of the using animation of the weapon, suggest setting it the same as useTime.
-            item.knockBack = 6; // The force of knockback of the weapon. Maximum is 20
-            item.value = Item.buyPrice(gold: 1); // The value of the weapon in copper coins
-            item.rare = ItemRarityID.Green; // The rarity of the weapon, from -1 to 13. You can also use ItemRarityID.TheColorRarity
-            item.UseSound = SoundID.Item1; // The sound when the weapon is being used
-            item.autoReuse = false; // Whether the weapon can be used more than once automatically by holding the use button
-            item.crit = 6; // The critical strike chance the weapon has. The player, by default, has 4 critical strike chance
-            item.useStyle = ItemUseStyleID.SwingThrow; // 1 is the useStyle
+            item.damage = 36;
+            item.melee = true;
+            item.noMelee = true;
+            item.width = 20;
+            item.height = 20;
+            item.useTime = 15;
+            item.useAnimation = 15;
+            item.noUseGraphic = true;
+            item.useStyle = 1;
+            item.knockBack = 2;
+            item.reuseDelay = 100;
+            item.value = Item.buyPrice(0, 5, 78, 0);
+            item.rare = 0;
+            item.autoReuse = false;
         }
 
-        public override void MeleeEffects(Player player, Rectangle hitbox)
+        public override bool AltFunctionUse(Player player)//You use this to allow the item to be right clicked
         {
-            if (Main.netMode != NetmodeID.SinglePlayer)
-                return;
-
-            double currentTime = DateTime.Now.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            if (currentTime - this.lastPlacementTime > 1.0)
-            {
-                mod.Logger.Info("Attempting to place room");
-                this.lastPlacementTime = currentTime;
-                GlobalPlacer.PlaceRoom(player, new Vector2(-1, -1));
-            }
+            return true;
         }
+
+        public override bool CanUseItem(Player player)
+        {
+            if (player.altFunctionUse == 2)//Sets what happens on right click(special ability)
+            {
+                Main.NewText("whaaaaaaaa", 150, 250, 150);
+            }
+            else //Sets what happens on left click(normal use)
+            {
+                mod.Logger.Info($"Attempting to place room {currentRoom}");
+                int width = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
+                    ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomWidth : -1;
+                int height = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
+                    ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomHeight : -1;
+
+                GlobalPlacer.PlaceRoom(player, new Vector2(width, height), useFurnitureSets: this.
+                    DoUseThemes(), preferredRoom: currentRoom);
+            }
+
+            return true;
+        }
+
+        protected virtual bool DoUseThemes()
+        {
+            return false;
+        }
+
+        //public override void MeleeEffects(Player player, Rectangle hitbox)
+        //{
+            //if (Main.netMode != NetmodeID.SinglePlayer)
+            //    return;
+
+            //Main.NewText(text, 150, 250, 150);
+            //double currentTime = DateTime.Now.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            //if (currentTime - this.lastPlacementTime > 1.0)
+            //{
+            //    mod.Logger.Info("Attempting to place room");
+            //    this.lastPlacementTime = currentTime;
+            //    int width = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
+            //        ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomWidth : -1;
+            //    int height = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
+            //        ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomHeight : -1;
+
+            //    GlobalPlacer.PlaceRoom(player, new Vector2(width, height), useFurnitureSets: this.DoUseThemes());
+            //}
+        //}
 
         public override void AddRecipes()
         {
