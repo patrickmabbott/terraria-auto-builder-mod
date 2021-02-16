@@ -20,6 +20,28 @@
 		'Tags' :  []
 	},
 	{
+		'Name' :  'Trap Door',
+		'Suffix' :  'Trap Door',
+		'Height' : 1,
+		'Width' : 2,
+		'StylesAvailable' :  false,
+		'PlacementType' :  'Block',
+		'PreferredPosition' :  0,
+		'Satisfies' :  ['Block'],
+		'Tags' :  []
+	},
+	{
+		'Name' :  'Platform',
+		'Suffix' :  'Platform',
+		'Height' : 1,
+		'Width' : 1,
+		'StylesAvailable' :  true,
+		'PlacementType' :  'Block',
+		'PreferredPosition' :  0,
+		'Satisfies' :  ['Block'],
+		'Tags' :  []
+	},
+	{
 		'Name' :  'Wall',
 		'Suffix' :  'Wall',
 		'Height' : 1,
@@ -29,6 +51,17 @@
 		'PreferredPosition' :  0,
 		'Satisfies' :  ['Wall'],
 		'Tags' :  []
+	},
+	{
+		'Name' :  'Bar',
+		'Suffix' :  'Bar',
+		'Height' : 1,
+		'Width' : 1,
+		'StylesAvailable' :  true,
+		'PlacementType' :  'Floor',
+		'PreferredPosition' :  0,
+		'Satisfies' :  [],
+		'Tags' :  ['Fancy', 'Bar']
 	},
 	{
 		'Name' :  'Torch',
@@ -60,7 +93,7 @@
 		'StylesAvailable' :  true,
 		'PlacementType' :  'Floor',
 		'PreferredPosition' :  40,
-		'Satisfies' :  ['Comfort'],
+		'Satisfies' :  ['Surface'],
 		'Tags' :  ['Bathroom']
 	},
 	{
@@ -73,6 +106,17 @@
 		'PreferredPosition' :  30,
 		'Satisfies' :  ['Comfort'],
 		'Tags' :  ['Bedroom']
+	},
+	{
+		'Name' :  'Campfire',
+		'Suffix' :  'Campfire',
+		'Height' : 1,
+		'Width' : 3,
+		'StylesAvailable' :  true,
+		'PlacementType' :  'Floor',
+		'PreferredPosition' :  30,
+		'Satisfies' :  ['Light'],
+		'Tags' :  ['Nature', 'Pretty']
 	},
 	{
 		'Name' :  'Bookcase',
@@ -141,6 +185,17 @@
 		'Tags' :  ['Fancy', 'Seat']
 	},
 	{
+		'Name' :  'Bench',
+		'Suffix' :  'Bench',
+		'Height' : 2,
+		'Width' : 3,
+		'StylesAvailable' :  true,
+		'PlacementType' :  'Floor',
+		'PreferredPosition' :  70,
+		'Satisfies' :  ['Comfort'],
+		'Tags' :  ['Fancy', 'Seat']
+	},
+	{
 		'Name' :  'Toilet',
 		'Suffix' :  'Toilet',
 		'Height' : 2,
@@ -157,7 +212,7 @@
 		'Height' : 2,
 		'Width' : 2,
 		'StylesAvailable' :  true,
-		'PlacementType' :  'Floor',
+		'PlacementType' :  'Atop',
 		'PreferredPosition' :  50,
 		'Satisfies' :  ['Light'],
 		'Tags' :  ['Fancy', 'FireHazard']
@@ -190,7 +245,7 @@
 		'Height' : 3,
 		'Width' : 1,
 		'StylesAvailable' :  true,
-		'PlacementType' :  'Floor',
+		'PlacementType' :  'Atop',
 		'PreferredPosition' :  50,
 		'Satisfies' :  ['Light'],
 		'Tags' :  []
@@ -360,7 +415,18 @@
 		'PreferredPosition' :  15,
 		'Satisfies' :  [],
 		'Tags' :  ['Military']
-	}
+	},
+	{
+		'Name' :  'Fountain',
+		'Suffix' :  'Fountain',
+		'Height' : 4,
+		'Width' : 2,
+		'StylesAvailable' :  false,
+		'PlacementType' :  'Floor',
+		'PreferredPosition' :  0,
+		'Satisfies' :  [],
+		'Tags' :  ['Fancy', 'Pretty', 'Art', 'Nature', 'Magic']
+	},
 ]";
 
     }

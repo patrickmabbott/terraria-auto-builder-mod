@@ -1,8 +1,8 @@
-using Terraria.ModLoader;
+﻿using Terraria.ModLoader;
 
 namespace AutoBuilder
 {
-	public class AutoBuilder : Mod
-	{
-	}
+    class AutoBuilder : Mod
+    {
+    }
 }

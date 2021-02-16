@@ -1,20 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using System.ComponentModel;
-using System.Linq;
-using System.Runtime.Serialization;
-using Terraria;
-using Terraria.ID;
-using Terraria.ModLoader;
+using AutoBuilder.Items;
 using Terraria.ModLoader.Config;
-using Terraria.ModLoader.Config.UI;
-using Terraria.UI;
 
 namespace AutoBuilder
 {
@@ -49,11 +36,48 @@ namespace AutoBuilder
         [Tooltip("Room types to not try making")]
         public string DisabledRoomTypes { get; set; }
 
+        [DefaultValue(true)]
+        [Label("Disable Chair/Table Requirement")]
+        [Tooltip("Disables chair/table housing requirement when furniture cannot be found that fits a room.\nDoes so via an invisible token that satisfies these requirements")]
+        public bool DisableHousingRequirements { get; set; }
+
+        [DefaultValue("Building 1, Building 2, Building 3, Building 4, Building 5, Building 6")]
+        [Label("Custom Building Names")]
+        [Tooltip("Names for custom blueprinted buildings. Separate names with commas.\n e.g. Castle,Super Cool Base,Awful House For Guide")]
+        public string CustomBuildingNames { get; set; }
+
+        [DefaultValue("[]")]
+        [Label("Blueprints Encoded")]
+        [Tooltip("A large block of JSON that stores custom blueprints.\nUse select all and copy to take a backup or share(ctrl-a and ctrl-v on windows)\n If you understand JSON, you can also merge multiple backups.\nMake sure you update building names as well")]
+        public string SerializedCustomBlueprints
+        {
+            get;
+            set;
+        }
+
+        [DefaultValue("")]
+        [Label("Preferred Mixerator Themes")]
+        [Tooltip("Comma-separated list of themes you prefer when using the Remixer in Preferred Theme mode")]
+        public string PreferredThemes
+        {
+            get;
+            set;
+        }
+
+        private string prevEncodedBlueprints = null;
+
+        public override void OnLoaded()
+        {
+            prevEncodedBlueprints = SerializedCustomBlueprints;
+        }
+
         public override void OnChanged()
         {
-            // Here we use the OnChanged hook to initialize ExampleUI.visible with the new values.
-            // We maintain both ExampleUI.visible and ShowCoinUI as separate values so ShowCoinUI can act as a default while ExampleUI.visible can change within a play session.
-            //UI.ExampleUI.Visible = ShowCoinUI;
+            if (prevEncodedBlueprints != SerializedCustomBlueprints)
+            {
+                BlueprintArchive.Instance.LoadCustomBlueprintsFromText(SerializedCustomBlueprints);
+                prevEncodedBlueprints = SerializedCustomBlueprints;
+            }
         }
     }
 }

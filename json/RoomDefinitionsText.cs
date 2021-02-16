@@ -9,7 +9,7 @@
         public static string text =
 @"[
 	{
-		'Name' :  'Random',
+		'TileName' :  'Random',
         'RequiredTags' :  [],
         'RequiredTagsCount' : 0,
         'AllowedTags' :  [],
@@ -17,7 +17,7 @@
         'Height' : 12
     },
     {
-    'Name' :  'Bathroom',
+    'TileName' :  'Bathroom',
     'RequiredTags' :  ['Bathroom'],
     'RequiredTagsCount' :  2,
     'AllowedTags' :  ['Bathroom', 'Pretty'],
@@ -25,7 +25,7 @@
     'Height' : 24
 },
 {
-    'Name' :  'Bedroom',
+    'TileName' :  'Bedroom',
     'RequiredTags' :  ['Bed','Dresser'],
     'RequiredTagsCount' :  2,
     'AllowedTags' :  ['Bedroom', 'Container', 'Art', 'Seat'],
@@ -34,7 +34,7 @@
     'Height' : 24
 },
 {
-    'Name' :  'Library',
+    'TileName' :  'Library',
     'RequiredTags' :  ['Bookcase'],
     'RequiredTagsCount' :  1,
     'AllowedTags' :  ['Library', 'Art'],
@@ -43,16 +43,16 @@
     'Height' : 24
 },
 {
-    'Name' :  'Display Room',
+    'TileName' :  'Display Room',
     'RequiredTags' : ['Art', 'Trophy'],
     'RequiredTagsCount' : 2,
-    'AllowedTags' :  ['Art','Trophy'],
+    'AllowedTags' :  ['Art','Trophy', 'Fancy'],
     'DisallowedTags' :  ['Bathroom','Bedroom'],
     'Width' : 30,
     'Height' : 24
 },
 {
-    'Name' :  'Nature Preserve',
+    'TileName' :  'Nature Preserve',
     'RequiredTags' :  ['Nature'],
     'RequiredTagsCount' :  1,
     'AllowedTags' :  ['Nature', 'Pretty'],
@@ -61,7 +61,7 @@
     'Height' : 12
 },
 {
-    'Name' :  'Armory',
+    'TileName' :  'Armory',
     'RequiredTags' :  ['Military'],
     'RequiredTagsCount' :  1,
     'AllowedTags' :  ['Military', 'Trophy'],

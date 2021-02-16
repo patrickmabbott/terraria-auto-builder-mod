@@ -13,8 +13,6 @@ namespace AutoBuilder.Items
         public override void SetStaticDefaults()
         {
             base.SetStaticDefaults();
-            Constants.Logger = mod.Logger;
-            Constants.Init();
             DisplayName.SetDefault("Roominator (Set)");
             Tooltip.SetDefault("Places a house room from a furniture set in your inventory\n(i.e. all marble furniture and non-set furniture like paintings)");
         }

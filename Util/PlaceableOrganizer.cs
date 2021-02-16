@@ -13,10 +13,16 @@ namespace AutoBuilder.Items
      */
     public class PlaceableOrganizer
     {
+        private Player player;
 
         private static readonly string MISC_ROOM_SET = "misc";
 
         private static Random rng = new Random();
+
+        public PlaceableOrganizer(Player player)
+        {
+            this.player = player;
+        }
 
         public static void Shuffle<T>(IList<T> list)
         {
@@ -34,32 +40,40 @@ namespace AutoBuilder.Items
         public IDictionary<String, ThemedPlaceableSet> PossibleRoomSets { get; set; } = new Dictionary<String, ThemedPlaceableSet>();
         //Contains all placeables, those that are part of a style set and those that aren't alike.
 
-        private static bool IsItemAllowed(Placeable placeable, RoomSpecification roomSpec, 
-            List<Placeable> duplicatePlaceables = null, bool requiredOnly = false)
+        private static bool IsItemAllowed(Placeable placeable, RoomSpecification roomSpec,
+            IList<Placeable> duplicatePlaceables = null, bool requiredOnly = false, bool allowNonDisabled = false)
         {
             return (duplicatePlaceables == null || !duplicatePlaceables.Contains(placeable)) &&
                    (
-                       (placeable.CatalogEntry.Tags.Intersect(roomSpec.RequiredTags).Any()) ||
-                       (!requiredOnly && (!roomSpec.AllowedTags.Any() ||
-                                          placeable.CatalogEntry.Tags.Intersect(roomSpec.AllowedTags).Any()))
+                       (
+                           allowNonDisabled || //In the most desperate case, allow anything that isn't explicitly disallowed.
+                           (placeable.CatalogEntry.Tags.Intersect(roomSpec.RequiredTags).Any()) ||
+                           (!requiredOnly && (!roomSpec.AllowedTags.Any() ||
+                                              placeable.CatalogEntry.Tags.Intersect(roomSpec.AllowedTags).Any()))
+                            
+                        )
+
                    )
                    && !placeable.CatalogEntry.Tags.Intersect(roomSpec.DisallowedTags).Any();
         }
 
         private static Func<Placeable, bool> IsItemAllowedLambda(RoomSpecification roomSpec,
-            List<Placeable> duplicatePlaceables = null, bool requiredOnly = false)
+            IList<Placeable> duplicatePlaceables = null, bool requiredOnly = false, bool allowNonDisabled = false)
         {
-            return (placeable) => IsItemAllowed(placeable, roomSpec, duplicatePlaceables, requiredOnly);
+            return (placeable) => IsItemAllowed(placeable, roomSpec, duplicatePlaceables, requiredOnly, allowNonDisabled);
         }
 
         /**
          * Finds a room/set combination that can be placed.
          * @param desiredSize How large you want the room to be. If either length or height is less than 1, it'll default to standard size of chosen room.
          */
-        public Tuple<ThemedPlaceableSet, RoomSpecification> FindPlaceableSet(IEnumerable<string> desiredRooms,
+        public IList<Tuple<ThemedPlaceableSet, RoomSpecification>> FindPlaceableRooms(IEnumerable<string> desiredRooms,
             Vector2 desiredSize, bool useFurnitureSets = true)
         {
             IList<RoomSpecification> potentialRooms;
+
+            List<Tuple<ThemedPlaceableSet, RoomSpecification>> roomSets =
+                new List<Tuple<ThemedPlaceableSet, RoomSpecification>>();
 
             var enumerable = desiredRooms == null ? new List<string>(){} :  desiredRooms.ToList();
             if (!enumerable.Any())
@@ -80,7 +94,6 @@ namespace AutoBuilder.Items
                 }
             }
 
-            Constants.Logger.Info($"Disabled rooms {ModContent.GetInstance<AutoBuilderConfig>().DisabledRoomTypes}");
             if (ModContent.GetInstance<AutoBuilderConfig>().DisabledRoomTypes.Any())
             {
                 potentialRooms = potentialRooms.Where(entry => 
@@ -103,10 +116,6 @@ namespace AutoBuilder.Items
 
                 //First off, try to cover required item tags via the misc item collection. Then, look for a themed item set that covers the rest.
 
-                //Constants.Logger.Info("Required tags " + string.Join(",", roomSpec.RequiredTags));
-                //Constants.Logger.Info("Desirable tags " + string.Join(",", roomSpec.AllowedTags) );
-                //Constants.Logger.Info("Disallowed tags " + string.Join(",", roomSpec.DisallowedTags));
-
                 ThemedPlaceableSet miscSet = PossibleRoomSets[MISC_ROOM_SET];
                 IList<Placeable> allPlaceables = miscSet.GetAllFurniture();
                 Shuffle(allPlaceables);
@@ -126,29 +135,16 @@ namespace AutoBuilder.Items
                     );
                 }
 
-                Constants.Logger.Info($"Found {requiredMiscPlaceables.Count} required placeables in misc with {useFurnitureSets}");
-
                 //Now, look in the themed sets to cover the rest of our needs.
                 foreach (ThemedPlaceableSet curSet in PossibleRoomSets.Values)
                 {
                     if (useFurnitureSets && curSet.Prefix == MISC_ROOM_SET)
                     {
-                        Constants.Logger.Info("Skipping misc set");
                         continue;
                     }
 
-                    //Constants.Logger.Info($"Checking room {roomSpec.Name} against themed set {curSet.Prefix}");
-
-                    //foreach(var furniture in curSet.GetAllFurniture())
-                    //{
-                    //    Constants.Logger.Info($"item {furniture.Name} has tags {string.Join(",",furniture.CatalogEntry.Tags)} which satisfy {string.Join(",", furniture.CatalogEntry.Tags.Intersect(roomSpec.RequiredTags))}");
-                    //    Constants.Logger.Info($"intersects {furniture.CatalogEntry.Tags.Intersect(roomSpec.RequiredTags).Any() && !furniture.CatalogEntry.Tags.Intersect(roomSpec.DisallowedTags).Any()}");
-                    //}
-
                     List<Placeable> requiredPlaceables = curSet.GetAllFurniture()
                         .Where(IsItemAllowedLambda(roomSpec, requiredOnly: true)).ToList();
-
-                    //Constants.Logger.Info($"Found {requiredPlaceables.Count} required placeables");
 
                     if (useFurnitureSets)
                     {
@@ -159,7 +155,7 @@ namespace AutoBuilder.Items
                     //Does the total # of required tagged items equal at least that required of the room? If not, we can reject right now.
                     if (requiredPlaceables.Count < roomSpec.RequiredTagsCount)
                     {
-                        Constants.Logger.Info($"Found {requiredPlaceables.Count} required placeables. Less than {roomSpec.RequiredTagsCount}");
+                        Constants.Logger.Warn($"Found {requiredPlaceables.Count} required placeables. Less than {roomSpec.RequiredTagsCount}");
                         continue;
                     }
 
@@ -174,26 +170,24 @@ namespace AutoBuilder.Items
                         else if (useFurnitureSets && miscSet.LightSources.Any(IsItemAllowedLambda(roomSpec)))
                         {
                             subset.LightSources.Add(miscSet.LightSources.First(IsItemAllowedLambda(roomSpec)));
-                        } //If absolutely necessary, break the room's allowed tags rule and just take the first light source
+                        } //If absolutely necessary, break the room's allowed tags rule and just take the first light source not disallowed
                         else if (curSet.LightSources.Any())
                         {
-                            subset.LightSources.Add(curSet.LightSources.First());
+                            subset.LightSources.Add(curSet.LightSources.First(IsItemAllowedLambda(roomSpec, allowNonDisabled: true)));
                         }
                         else if(useFurnitureSets)
                         {
-                            subset.LightSources.Add(miscSet.LightSources.First());
+                            subset.LightSources.Add(miscSet.LightSources.First(IsItemAllowedLambda(roomSpec, allowNonDisabled: true)));
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
 
-                    Constants.Logger.Info($"Chose ls {curSet.LightSources.First().Name}");
-
                     subset.Blocks.Add(curSet.Blocks.First(entry => !requiredPlaceables.Contains(entry)));
 
-                    Constants.Logger.Info("Chose block " + curSet.Blocks.First().Name);
-
                     subset.Walls.Add(curSet.Walls.First(entry => !requiredPlaceables.Contains(entry)));
-
-                    Constants.Logger.Info("Chose wall " + curSet.Walls.First().Name);
 
                     if (!requiredPlaceables.Any(entry =>
                         entry.CatalogEntry.Satisfies.Contains(Constants.SATISFIES_COMFORT)))
@@ -201,10 +195,18 @@ namespace AutoBuilder.Items
                         if (curSet.Comfort.Any(IsItemAllowedLambda(roomSpec)))
                         {
                             subset.Comfort.Add(curSet.Comfort.First(IsItemAllowedLambda(roomSpec)));
-                        } //If that fails, find misc light sources that are allowed.
+                        } //If that fails, find seat that is not allowed but atleast isn't disallowed.
+                        else if (ModContent.GetInstance<AutoBuilderConfig>().DisableHousingRequirements)
+                        {
+                            subset.UseHousingCheat = true;
+                        }
+                        else if(curSet.Comfort.Any(IsItemAllowedLambda(roomSpec, allowNonDisabled: true)))
+                        {
+                            subset.Comfort.Add(curSet.Comfort.First(IsItemAllowedLambda(roomSpec, allowNonDisabled: true)));
+                        }
                         else
                         {
-                            subset.Comfort.Add(curSet.Comfort.First());
+                            break;
                         }
                     }
 
@@ -216,21 +218,27 @@ namespace AutoBuilder.Items
                         if (curSet.Surfaces.Any(IsItemAllowedLambda(roomSpec)))
                         {
                             subset.Surfaces.Add(curSet.Surfaces.First(IsItemAllowedLambda(roomSpec)));
-                        } //If that fails, find misc light sources that are allowed.
+                        }
+                        else if (ModContent.GetInstance<AutoBuilderConfig>().DisableHousingRequirements)
+                        {
+                            subset.UseHousingCheat = true;
+                        }
+                        else if(curSet.Surfaces.Any(IsItemAllowedLambda(roomSpec, allowNonDisabled: true)))
+                        {
+                            subset.Surfaces.Add(curSet.Surfaces.First(IsItemAllowedLambda(roomSpec, allowNonDisabled: true)));
+                        }
                         else
                         {
-                            subset.Surfaces.Add(curSet.Surfaces.First());
+                            break;
                         }
                     }
 
                     //Get the first n items from required (where n is how many the room requires)
                     subset.Misc.AddRange(requiredPlaceables.GetRange(0, roomSpec.RequiredTagsCount));
 
-                    Constants.Logger.Info($" got {subset.Misc.Count} misc items ");
-
                     //Now, try to add up to fill the rest of the space somewhat.
                     List<Placeable> placeablesPool = curSet.GetAllFurniture()
-                        .Where(IsItemAllowedLambda(roomSpec, duplicatePlaceables: requiredPlaceables)).ToList();
+                        .Where(IsItemAllowedLambda(roomSpec, duplicatePlaceables: subset.GetAllFurniture())).ToList();
 
                     placeablesPool.AddRange(requiredPlaceables.Skip(roomSpec.RequiredTagsCount));
                     if (useFurnitureSets)
@@ -238,7 +246,7 @@ namespace AutoBuilder.Items
                         placeablesPool.AddRange(desirableMiscPlaceables);
                     }
 
-                    Constants.Logger.Info($" Available {placeablesPool.Count} misc placeables");
+                    //Remove any items from placeable pool that are already in required or 
 
                     Shuffle(placeablesPool);
 
@@ -296,20 +304,22 @@ namespace AutoBuilder.Items
                         }
                     }
 
-                    Constants.Logger.Info($"Decided upon {roomSpec.Name} using themed set {curSet.Prefix} with {subset.Misc.Count}");
-                    return new Tuple<ThemedPlaceableSet, RoomSpecification>(subset, roomSpec);
+                    roomSets.Add(new Tuple<ThemedPlaceableSet, RoomSpecification>(subset, roomSpec));
+                    break;
                 }
-                Constants.Logger.Info($"Could not find a set for {roomSpec.Name}");
             }
-            Constants.Logger.Info($"Could not find a buildable room");
-            //Using early return. So, if it gets here, it hasn't found a valid room.
-            return null;
+
+            if (!roomSets.Any())
+            {
+                Constants.Logger.Warn($"Could not find a buildable room");
+            }
+            return roomSets;
         }
 
         /**
          * Determines which furniture sets are available (or, in the case of not using furniture sets, all of it just goes into misc.
          */
-        public bool DetermineAvailableThemedSets(Player player, bool useFurnitureSets = true)
+        public bool DetermineAvailableThemedSets(bool useFurnitureSets = true)
         {
             //First pass, look for furniture items
             //Then, do a second pass to see if we can pick up stuff like "glass" as a viable block/brick type.
@@ -340,7 +350,7 @@ namespace AutoBuilder.Items
                             {
                                 continue;
                             }
-                            Placeable newPlaceable = new Placeable(item.Name, tileId, 
+                            Placeable newPlaceable = new Placeable(item.Name, tileId, tileId,
                                 item.placeStyle, entry, item.stack);
                             ThemedPlaceableSet curThemedPlaceableSet;
                             if (useFurnitureSets && entry.StylesAvailable)
@@ -392,7 +402,6 @@ namespace AutoBuilder.Items
                             }
                             else
                             {
-                                //Constants.Logger.Info($"Could not find a place for {newPlaceable.Name}");
                                 curThemedPlaceableSet?.Misc.Add(newPlaceable);
                             }
                         }
@@ -428,13 +437,11 @@ namespace AutoBuilder.Items
                             //prefix for the brick/wall vice the furniture.
                             if (Constants.GetSpeciallyNamedSets().ContainsKey(curRoomSet.Prefix))
                             {
-                                Constants.Logger.Info($"Found specially named set {curRoomSet.Prefix}");
                                 if (item.Name.StartsWith(Constants.GetSpeciallyNamedSets()[curRoomSet.Prefix].BlockName))
                                 {
                                     //Find the block entry in placeableCatalogEntries.
                                     PlaceableCatalogEntry entry = Constants.GetCatalogEntries()["Block"];
-                                    Constants.Logger.Info($"Adding block {item.Name} to {curRoomSet.Prefix} based on special");
-                                    Placeable newPlaceable = new Placeable(item.Name, tileId,
+                                    Placeable newPlaceable = new Placeable(item.Name, tileId, 0,
                                         item.placeStyle, entry, item.stack);
                                     curRoomSet.Blocks.Add(newPlaceable);
                                 }
@@ -443,8 +450,7 @@ namespace AutoBuilder.Items
                                 {
                                     //Find the block entry in placeableCatalogEntries.
                                     PlaceableCatalogEntry entry = Constants.GetCatalogEntries()["Wall"];
-                                    Constants.Logger.Info($"Adding wall {item.Name} to {curRoomSet.Prefix} based on special");
-                                    Placeable newPlaceable = new Placeable(item.Name, tileId,
+                                    Placeable newPlaceable = new Placeable(item.Name, 0, tileId,
                                         item.placeStyle, entry, item.stack);
                                     curRoomSet.Walls.Add(newPlaceable);
                                 }
@@ -456,7 +462,7 @@ namespace AutoBuilder.Items
                                     if (item.Name.EndsWith("Wall"))
                                     {
                                         PlaceableCatalogEntry entry = Constants.GetCatalogEntries()["Wall"];
-                                        Placeable newPlaceable = new Placeable(item.Name, tileId,
+                                        Placeable newPlaceable = new Placeable(item.Name, 0, tileId,
                                             item.placeStyle, entry, item.stack);
                                         curRoomSet.Walls.Add(newPlaceable);
                                     }
@@ -468,10 +474,9 @@ namespace AutoBuilder.Items
 
                                         if (isBlock)
                                         {
-                                            Placeable newPlaceable = new Placeable(item.Name, tileId,
+                                            Placeable newPlaceable = new Placeable(item.Name, tileId, 0,
                                                 item.placeStyle, entry, item.stack);
                                             curRoomSet.Blocks.Add(newPlaceable);
-                                            //Constants.Logger.Info($"Adding block {item.Name} to {curRoomSet.Prefix} based on normal rules");
                                         }
                                     }
                                 }
@@ -482,7 +487,6 @@ namespace AutoBuilder.Items
             }
 
             //For each of the sets, go ahead and shuffle the order of all of the placeables so we don't get the same room layout every time.
-            //Constants.Logger.Info($"Shuffling room set entries {PossibleRoomSets.Values.Count} {PossibleRoomSets.Keys.First()}");
 
             foreach (ThemedPlaceableSet curSet in PossibleRoomSets.Values.ToList())
             {
@@ -496,7 +500,6 @@ namespace AutoBuilder.Items
             }
             //We only need the themed set to for sure provide light if the misc set does not do so.
             bool needLightSourceFromThemedSet = !useFurnitureSets || !PossibleRoomSets[MISC_ROOM_SET].LightSources.Any();
-            //Constants.Logger.Info($"Checking light sources");
             //Now, go ahead and reject any room sets that do not satisfy the basic requirements of a room. e.g. CSLD
             //Going to ignore the light requirement for now because we'll often get that via torches.
             

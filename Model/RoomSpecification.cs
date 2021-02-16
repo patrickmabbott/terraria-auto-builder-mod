@@ -9,7 +9,7 @@ namespace AutoBuilder.Items
     public class RoomSpecification
     {
         /**
-         * Name of the room.
+         * TileName of the room.
          */
         public String Name { get; set; }
         /**

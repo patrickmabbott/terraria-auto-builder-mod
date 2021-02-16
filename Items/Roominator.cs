@@ -1,5 +1,8 @@
 ﻿using AutoBuilder.Items;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using AutoBuilder.Util;
 using log4net;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -10,12 +13,15 @@ namespace AutoBuilder.Items
 {
     public class Roominator : ModItem
     {
-
-        //private PlaceableOrganizer organizer = new PlaceableOrganizer();
-        //private PlaceableOrganizer organizer = new PlaceableOrganizer();
-        double lastPlacementTime = 0;
+        double lastRefreshTime = 0;
 
         private string currentRoom;
+
+        private GlobalPlacer placer;
+
+        private List<string> availableRoomNames = new List<string>();
+
+        private bool hasRoomBeenPlacedSinceLastCalc = false;
 
         public override void SetStaticDefaults()
         {
@@ -25,20 +31,7 @@ namespace AutoBuilder.Items
 
         public override void SetDefaults()
         {
-            item.damage = 36;
-            item.melee = true;
-            item.noMelee = true;
-            item.width = 20;
-            item.height = 20;
-            item.useTime = 15;
-            item.useAnimation = 15;
-            item.noUseGraphic = true;
-            item.useStyle = 1;
-            item.knockBack = 2;
-            item.reuseDelay = 100;
-            item.value = Item.buyPrice(0, 5, 78, 0);
-            item.rare = 0;
-            item.autoReuse = false;
+            ItemUtils.SetItemDefaults(item);
         }
 
         public override bool AltFunctionUse(Player player)//You use this to allow the item to be right clicked
@@ -46,22 +39,68 @@ namespace AutoBuilder.Items
             return true;
         }
 
+        private bool RecalculateRooms(Vector2 size)
+        {
+            this.availableRoomNames = placer.DetermineAvailableRooms(size, DoUseThemes())
+                .Select(entry => entry.Item2.Name)
+                .ToList();
+
+            if (!this.availableRoomNames.Any())
+            {
+                Main.NewText("Unable to build any rooms", 150, 250, 150);
+                return false;
+            }
+
+            this.availableRoomNames.Sort(((name1, name2) => name1.CompareTo(name2)));
+
+            if (currentRoom == null)
+            {
+                currentRoom = this.availableRoomNames[0];
+            }
+            else
+            {
+                currentRoom = this.availableRoomNames.FirstOrDefault(entry => entry.CompareTo(currentRoom) == 1) ??
+                              this.availableRoomNames[0];
+            }
+
+            hasRoomBeenPlacedSinceLastCalc = false;
+            return true;
+        }
+
         public override bool CanUseItem(Player player)
         {
+            if (placer == null)
+            {
+                this.placer = new GlobalPlacer(player);
+            }
+
+            int width = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
+                ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomWidth : -1;
+            int height = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
+                ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomHeight : -1;
+            Vector2 size = new Vector2(width, height);
+
             if (player.altFunctionUse == 2)//Sets what happens on right click(special ability)
             {
-                Main.NewText("whaaaaaaaa", 150, 250, 150);
+                RecalculateRooms(size);
+                Main.NewText($"Ready to build {currentRoom}", 150, 250, 150);
             }
             else //Sets what happens on left click(normal use)
             {
-                mod.Logger.Info($"Attempting to place room {currentRoom}");
-                int width = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
-                    ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomWidth : -1;
-                int height = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
-                    ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomHeight : -1;
+                if (this.currentRoom == null)
+                {
 
-                GlobalPlacer.PlaceRoom(player, new Vector2(width, height), useFurnitureSets: this.
-                    DoUseThemes(), preferredRoom: currentRoom);
+                    Main.NewText("No room selected to build", 255, 50, 50);
+                    return true;
+                }
+
+                if (hasRoomBeenPlacedSinceLastCalc)
+                {
+                    RecalculateRooms(size);
+                }
+
+                placer.PlaceRoom(size, currentRoom);
+                hasRoomBeenPlacedSinceLastCalc = true;
             }
 
             return true;
@@ -88,7 +127,7 @@ namespace AutoBuilder.Items
             //    int height = ModContent.GetInstance<AutoBuilderConfig>().UseDefaultSize
             //        ? ModContent.GetInstance<AutoBuilderConfig>().DefaultRoomHeight : -1;
 
-            //    GlobalPlacer.PlaceRoom(player, new Vector2(width, height), useFurnitureSets: this.DoUseThemes());
+            //    GlobalPlacer.DetermineAvailableRooms(player, new Vector2(width, height), useFurnitureSets: this.DoUseThemes());
             //}
         //}
 

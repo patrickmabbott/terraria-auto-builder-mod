@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using AutoBuilder.json;
+using AutoBuilder.Util;
 using log4net;
 using Newtonsoft.Json;
 
@@ -22,6 +23,11 @@ namespace AutoBuilder.Items
         public static readonly String SATISFIES_DOOR = "Door";
         public static readonly String SATISFIES_WALL = "Wall";
         public static readonly String SATISFIES_BLOCK = "Block";
+        public static readonly int DOOR_STYLE_WRAP_LIMIT = 45;
+        //Doors have this very annoying behavior of reporting either the correct style for a constitutent tile or 36 higher or 72 higher.
+        public static readonly int DOOR_STYLE_ID_RANGE = 36;
+        public static readonly int DOOR_CLOSED_TILE_ID = 10;
+        public static readonly int DOOR_OPEN_TILE_ID = 11;
 
         public static ILog Logger { get; set; }
 
@@ -42,23 +48,26 @@ namespace AutoBuilder.Items
 
             text = ReadFile("PlaceableCatalog");
             IList<PlaceableCatalogEntry> catalogEntriesList = JsonConvert.DeserializeObject<PlaceableCatalogEntry[]>(text).ToList();
-            Logger.Info(catalogEntriesList.Count);
             foreach (PlaceableCatalogEntry item in catalogEntriesList)
             {
-                Logger.Info(item.Name + " " + item.Tags.Count);
                 //Add the item's name as a tag so we can use tags for look for exact items as well as categories.
-
-                item.Tags.Add(item.Name);
-                Logger.Info(item.Name);
-                catalogEntries.Add(item.Name, item);
+                if (item.Name != null)
+                {
+                    item.Tags.Add(item.Name);
+                    Constants.Logger.Info($" Catalog Entry Suffix: {item.Suffix} from catalog entries {item.Name}");
+                    if (!catalogEntries.ContainsKey(item.Name))
+                    {
+                        catalogEntries.Add(item.Name, item);
+                    }
+                }
             }
-
+            Constants.Logger.Info($"{catalogEntries.Count} catalog entries");
         }
 
-        private static String ReadFile(String fileName)
+        public static string ReadFile(String fileName)
         {
 
-            if (fileName.Contains("Placeable"))
+            if (fileName.Contains("PlaceableCatalog"))
             {
                 return PlaceableCatalogText.text.Replace("'", "\"");
             }
@@ -69,6 +78,14 @@ namespace AutoBuilder.Items
             else if (fileName.Contains("Specially"))
             {
                 return SpeciallyNamedSetsText.text.Replace("'", "\"");
+            }
+            else if (fileName.Contains("StandardBlueprints"))
+            {
+                return StandardBlueprintsText.text.Replace("'", "\"");
+            }
+            else if (fileName.Contains("ItemBasicInfo"))
+            {
+                return ItemBasicInfoTexts.text;
             }
 
             return null;
